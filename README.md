@@ -85,7 +85,7 @@ Grav's nightly jobs (cache purge, backups) can run from the host's crontab:
 2. The [CI](.github/workflows/ci.yml) workflow builds the image. There are no tests beyond that:
    if it builds, it ships.
 3. When the `build` check passes, GitHub's auto-merge merges the PR.
-4. The merge changes the `Dockerfile` on `main`, which starts the
+4. The merge changes the `Dockerfile` on `master`, which starts the
    [Release](.github/workflows/release.yml) workflow. It builds the image, pushes it to
    `ghcr.io` with an SBOM and a signed provenance attestation, and creates a GitHub release.
 
@@ -100,7 +100,7 @@ version pattern in [`renovate.json`](renovate.json).
 1. Install the [Renovate GitHub app](https://github.com/apps/renovate) for this repository.
 2. **Settings → General → Pull Requests**: enable *Allow auto-merge* and
    *Automatically delete head branches*.
-3. **Settings → Rules → Rulesets**, a ruleset for the default branch (`main`):
+3. **Settings → Rules → Rulesets**, a ruleset for the default branch (`master`):
    *Require a pull request before merging* with 0 required approvals,
    *Require status checks to pass* with the check `build`, and *Block force pushes*.
    Without a required check, auto-merge merges before the build has finished.

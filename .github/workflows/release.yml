@@ -1,11 +1,11 @@
-# Runs when a change to the image reaches main (in practice: an automerged Renovate update of
+# Runs when a change to the image reaches master (in practice: an automerged Renovate update of
 # serversideup/php). Builds the image, pushes it to ghcr.io and creates a GitHub release.
 # Updates of the workflows themselves don't touch these paths and so don't make a release.
 name: Release
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - Dockerfile
       - grav.caddyfile
