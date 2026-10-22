@@ -1,0 +1,31 @@
+# Example: one Grav site behind Traefik. The site folder must be owned by www-data (82:82):
+#   chown -R 82:82 ./grav
+services:
+  grav:
+    image: ghcr.io/jogai/serversideup-php-grav:8.5
+    container_name: grav
+    restart: unless-stopped
+    environment:
+      # Grav config overrides (win over user/config/system.yaml; changing these in the Admin has no effect)
+      GRAV_CONFIG: "true"
+      GRAV_CONFIG__system__cache__enabled: "true"
+      GRAV_CONFIG__system__pages__lazy_index: "true"     # per-page SQLite index instead of one big cache blob
+      GRAV_CONFIG__system__cache__check__interval: "60"  # look for changed page files once a minute, not every 2 s
+      GRAV_CONFIG__system__twig__debug: "false"
+      GRAV_CONFIG__system__debugger__enabled: "false"
+    volumes:
+      - ./grav:/var/www/html
+    # the image's healthcheck asks Caddy for /healthcheck, which doesn't start PHP
+    mem_limit: 512m
+    networks:
+      - proxy
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.grav.rule=Host(`www.example.com`)'
+      - 'traefik.http.routers.grav.entrypoints=https'
+      - 'traefik.http.routers.grav.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.grav.loadbalancer.server.port=8080'
+
+networks:
+  proxy:
+    external: true

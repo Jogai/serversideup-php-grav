@@ -1,0 +1,59 @@
+# Grav's security rules from webserver-configs/nginx.conf (Grav 2.2.11). Copied to
+# /etc/frankenphp/caddyfile-server.d/, so serversideup's Caddyfile imports it inside the site block. Its own `security` snippet already blocks hidden files at any
+# depth (.git, .env, .htaccess, except /.well-known/) and *.ini, *.log, *.sh, *.conf, *.bak.
+# `respond` runs before php_server and file_server, so these see the request path as sent.
+
+# Only the front controller runs PHP. Together with `try_files {path} index.php` in
+# CADDY_PHP_SERVER_OPTIONS, no other .php file in the site can be executed.
+@grav-php {
+	path *.php
+	not path /index.php
+}
+respond @grav-php 403
+
+# deny all direct access for these folders
+@grav-folders path_regexp (?i)^/(cache|bin|logs|backup|tmp|tests|webserver-configs)/
+respond @grav-folders 403
+
+# deny all direct access to the sensitive user folders, whatever the file type
+@grav-config path_regexp (?i)^/user/(env/[^/]+/)?config/
+respond @grav-config 403
+
+# under user/accounts only avatar images are public (SVG excluded as a stored-XSS vector)
+@grav-accounts {
+	path_regexp (?i)^/user/(env/[^/]+/)?accounts/
+	not path_regexp (?i)^/user/(env/[^/]+/)?accounts/[^/]+/[^/]+\.(jpe?g|png|gif|webp|avif|bmp|ico)$
+}
+respond @grav-accounts 403
+
+# under user/data only media uploads are public (SVG excluded)
+@grav-data {
+	path_regexp (?i)^/user/(env/[^/]+/)?data/
+	not path_regexp (?i)^/user/(env/[^/]+/)?data/.*\.(jpe?g|png|gif|webp|avif|bmp|ico|mp4|webm|ogg|ogv|mov|mp3|wav|m4a|flac|pdf)$
+}
+respond @grav-data 403
+
+# deny scripts in the public cache folders (image derivatives and combined assets)
+@grav-cache-scripts path_regexp (?i)^/(images|assets)/.*\.(php\d?|phar|phtml|pht|phtm|phps|pl|py|cgi|sh|bat)$
+respond @grav-cache-scripts 403
+
+# deny source files inside the core system folders
+@grav-system path_regexp (?i)^/(system|vendor)/.*\.(txt|xml|md|html?|shtml?|json|ya?ml|php\d?|phar|phtml|pl|py|cgi|twig|sh|bat)$
+respond @grav-system 403
+
+# deny source files inside the user folder (page markdown, blueprints, plugin code, templates)
+@grav-user path_regexp (?i)^/user/.*\.(txt|md|json|ya?ml|php\d?|phar|phtml|pl|py|cgi|twig|sh|bat)$
+respond @grav-user 403
+
+# deny specific files in the root folder
+@grav-root path_regexp ^/(LICENSE\.txt|composer\.lock|composer\.json|nginx\.conf|web\.config|htaccess\.txt)
+respond @grav-root 403
+
+# serversideup marks every static file as immutable for a year. Grav's theme files keep their
+# names when they change, so use Grav's own 30 days; content-hashed bundles of SvelteKit-based
+# plugins (Admin2, under /_app/immutable/) keep the year.
+@grav-static {
+	path *.css *.js *.jpg *.jpeg *.png *.gif *.webp *.avif *.bmp *.ico *.svg *.mp4 *.webm *.ogg *.ogv *.mov *.mp3 *.wav *.m4a *.flac *.woff *.woff2 *.ttf *.otf *.eot
+	not path */_app/immutable/*
+}
+header @grav-static Cache-Control "public, max-age=2592000"

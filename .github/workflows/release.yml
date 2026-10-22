@@ -1,0 +1,122 @@
+# Runs when a change to the image reaches main (in practice: an automerged Renovate update of
+# serversideup/php). Builds the image, pushes it to ghcr.io and creates a GitHub release.
+# Updates of the workflows themselves don't touch these paths and so don't make a release.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - grav.caddyfile
+      - grav.ini
+  workflow_dispatch:
+
+permissions:
+  contents: write      # create the tag and release
+  packages: write      # push to ghcr.io
+  id-token: write      # sign the build provenance attestation
+  attestations: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # all tags, to number repeated releases
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: grav-frankenphp:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Versions
+        id: v
+        run: |
+          set -euo pipefail
+          upstream=$(sed -n 's/^FROM serversideup\/php:8\.5-frankenphp-alpine-v\([0-9.]*\)@.*/\1/p' Dockerfile)
+          [ -n "$upstream" ] || { echo "no serversideup version found in Dockerfile"; exit 1; }
+          php=$(docker run --rm --entrypoint php grav-frankenphp:local -r 'echo PHP_VERSION;')
+          minor=${php%.*}
+          # e.g. 8.5.12-ssu5.0.2; a rebuild of the same versions (digest update) gets -r1, -r2, ...
+          base="$php-ssu$upstream"
+          tag=$base
+          n=0
+          while git rev-parse -q --verify "refs/tags/$tag" >/dev/null; do
+              n=$((n + 1))
+              tag="$base-r$n"
+          done
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          {
+              echo "upstream=$upstream"
+              echo "php=$php"
+              echo "tag=$tag"
+              echo "image=$image"
+              echo "tags<<EOF"
+              echo "$image:$tag"
+              echo "$image:$php"
+              echo "$image:$minor"
+              echo "$image:latest"
+              echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.v.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.v.outputs.tag }}
+            org.opencontainers.image.title=Grav on FrankenPHP
+            org.opencontainers.image.description=Grav CMS on serversideup/php FrankenPHP (PHP ${{ steps.v.outputs.php }}, serversideup v${{ steps.v.outputs.upstream }})
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha
+
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ steps.v.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+          IMAGE: ${{ steps.v.outputs.image }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+          PHP: ${{ steps.v.outputs.php }}
+          UPSTREAM: ${{ steps.v.outputs.upstream }}
+        run: |
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --notes "$(cat <<EOF
+          PHP $PHP on [serversideup/php v$UPSTREAM](https://github.com/serversideup/docker-php/releases/tag/v$UPSTREAM) (FrankenPHP, Alpine).
+
+          \`\`\`
+          docker pull $IMAGE:$TAG
+          \`\`\`
+
+          Digest: \`$DIGEST\`
+          Also tagged \`$PHP\`, \`${PHP%.*}\` and \`latest\`.
+          EOF
+          )"
