@@ -45,7 +45,7 @@ jobs:
         id: v
         run: |
           set -euo pipefail
-          upstream=$(sed -n 's/^FROM serversideup\/php:8\.5-frankenphp-alpine-v\([0-9.]*\)@.*/\1/p' Dockerfile)
+          upstream=$(sed -n 's/^FROM ghcr\.io\/serversideup\/php:8\.5-frankenphp-alpine-v\([0-9.]*\)@.*/\1/p' Dockerfile)
           [ -n "$upstream" ] || { echo "no serversideup version found in Dockerfile"; exit 1; }
           php=$(docker run --rm --entrypoint php grav-frankenphp:local -r 'echo PHP_VERSION;')
           minor=${php%.*}
