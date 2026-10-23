@@ -13,13 +13,13 @@
     {
       "description": "Follow serversideup's release tags for PHP 8.5 FrankenPHP on Alpine (8.5-frankenphp-alpine-v5.0.2 to -v5.0.3); betas and the per-PHP-patch tags don't match and are ignored. The digest update catches rebuilds of the same tag.",
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["serversideup/php"],
+      "matchPackageNames": ["ghcr.io/serversideup/php"],
       "versioning": "regex:^8\\.5-frankenphp-alpine-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
     },
     {
       "description": "A new serversideup major release can rename settings or change its Caddyfile: open the PR but merge it by hand",
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["serversideup/php"],
+      "matchPackageNames": ["ghcr.io/serversideup/php"],
       "matchUpdateTypes": ["major"],
       "automerge": false
     }

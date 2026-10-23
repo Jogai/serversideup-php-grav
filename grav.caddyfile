@@ -22,14 +22,14 @@ respond @grav-config 403
 # under user/accounts only avatar images are public (SVG excluded as a stored-XSS vector)
 @grav-accounts {
 	path_regexp (?i)^/user/(env/[^/]+/)?accounts/
-	not path_regexp (?i)^/user/(env/[^/]+/)?accounts/[^/]+/[^/]+\.(jpe?g|png|gif|webp|avif|bmp|ico)$
+	not path_regexp (?i)^/user/(env/[^/]+/)?accounts/[^/]+/[^/]+\.(jpe?g|png|gif|webp|avif|jxl|bmp|ico)$
 }
 respond @grav-accounts 403
 
 # under user/data only media uploads are public (SVG excluded)
 @grav-data {
 	path_regexp (?i)^/user/(env/[^/]+/)?data/
-	not path_regexp (?i)^/user/(env/[^/]+/)?data/.*\.(jpe?g|png|gif|webp|avif|bmp|ico|mp4|webm|ogg|ogv|mov|mp3|wav|m4a|flac|pdf)$
+	not path_regexp (?i)^/user/(env/[^/]+/)?data/.*\.(jpe?g|png|gif|webp|avif|jxl|bmp|ico|mp4|webm|ogg|ogv|mov|mp3|wav|m4a|flac|pdf)$
 }
 respond @grav-data 403
 
@@ -53,7 +53,12 @@ respond @grav-root 403
 # names when they change, so use Grav's own 30 days; content-hashed bundles of SvelteKit-based
 # plugins (Admin2, under /_app/immutable/) keep the year.
 @grav-static {
-	path *.css *.js *.jpg *.jpeg *.png *.gif *.webp *.avif *.bmp *.ico *.svg *.mp4 *.webm *.ogg *.ogv *.mov *.mp3 *.wav *.m4a *.flac *.woff *.woff2 *.ttf *.otf *.eot
+	path *.css *.js *.jpg *.jpeg *.png *.gif *.webp *.avif *.jxl *.bmp *.ico *.svg *.mp4 *.webm *.ogg *.ogv *.mov *.mp3 *.wav *.m4a *.flac *.woff *.woff2 *.ttf *.otf *.eot
 	not path */_app/immutable/*
 }
 header @grav-static Cache-Control "public, max-age=2592000"
+
+# JPEG XL: Go's built-in MIME table has no .jxl and the image has no /etc/mime.types, so set the
+# type here. Grav itself can't resize JXL; this is for files converted beforehand (use <picture>).
+@grav-jxl path *.jxl
+header @grav-jxl Content-Type image/jxl

@@ -79,7 +79,7 @@ Grav's nightly jobs (cache purge, backups) can run from the host's crontab:
 
 ## How updates flow
 
-1. Renovate watches `serversideup/php:8.5-frankenphp-alpine-v<version>` in the
+1. Renovate watches `ghcr.io/serversideup/php:8.5-frankenphp-alpine-v<version>` in the
    [`Dockerfile`](Dockerfile). It opens a PR for a new serversideup release (new tag) and for a
    rebuild of the current one (new digest, e.g. a PHP patch release or Alpine fixes).
 2. The [CI](.github/workflows/ci.yml) workflow builds the image. There are no tests beyond that:
