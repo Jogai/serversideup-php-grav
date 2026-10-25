@@ -1,7 +1,7 @@
 # Grav CMS on FrankenPHP: Caddy and PHP 8.5 in one process, based on serversideup/php.
 # Pulled from ghcr.io (the same images as on Docker Hub) to stay clear of Docker Hub's pull limits.
 # Renovate bumps the version and digest below when serversideup publishes a release or rebuilds the tag.
-FROM ghcr.io/serversideup/php:8.5-frankenphp-alpine-v5.0.3@sha256:fd5c5d89585f322c62d2baa4df5eed418ecd19197ffe6626f7011f6c6ab7965e
+FROM ghcr.io/serversideup/php:8.5-frankenphp-alpine-v5.0.3@sha256:fdbe71476e62d74bf9fb6005ac87e3fcf13d428053f6b3bab4a5381ab4de3faa
 
 USER root
 
