@@ -2,7 +2,7 @@
 #   chown -R 82:82 ./grav
 services:
   grav:
-    image: ghcr.io/jogai/serversideup-php-grav:8.5
+    image: ghcr.io/jogai/serversideup-php-grav:latest
     container_name: grav
     restart: unless-stopped
     environment:

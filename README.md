@@ -3,14 +3,14 @@
 [![Release](https://img.shields.io/github/v/release/jogai/serversideup-php-grav?style=for-the-badge&label=release)](https://github.com/jogai/serversideup-php-grav/releases/latest)
 [![Release build](https://img.shields.io/github/actions/workflow/status/jogai/serversideup-php-grav/release.yml?style=for-the-badge&label=release%20build)](https://github.com/jogai/serversideup-php-grav/actions/workflows/release.yml)
 [![Image](https://img.shields.io/badge/ghcr.io-jogai%2Fserversideup--php--grav-blue?style=for-the-badge&logo=docker&logoColor=white)](https://github.com/jogai/serversideup-php-grav/pkgs/container/serversideup-php-grav)
-[![PHP 8.5](https://img.shields.io/badge/php-8.5-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
+[![PHP 8](https://img.shields.io/badge/php-8-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
 [![Grav 2](https://img.shields.io/badge/grav-2.x-221E1F?style=for-the-badge)](https://getgrav.org)
 [![Renovate](https://img.shields.io/badge/renovate-enabled-1A1F6C?style=for-the-badge&logo=renovate&logoColor=white)](https://github.com/jogai/serversideup-php-grav/issues?q=is%3Aissue+Dependency+Dashboard)
 [![License](https://img.shields.io/github/license/jogai/serversideup-php-grav?style=for-the-badge)](LICENSE)
 
 A container image for [Grav CMS](https://getgrav.org) 2.x, built on
-[serversideup/php](https://serversideup.net/open-source/docker-php/) `8.5-frankenphp-alpine`:
-Caddy and PHP 8.5 in a single process, running as the unprivileged `www-data` user on port 8080.
+[serversideup/php](https://serversideup.net/open-source/docker-php/) `8-frankenphp-alpine`:
+Caddy and the newest PHP 8.x in a single process, running as the unprivileged `www-data` user on port 8080.
 
 On top of the base image it:
 
@@ -35,7 +35,7 @@ with `bin/gpm`. The image does not run Grav's scheduler.
 
 ```sh
 chown -R 82:82 ./grav        # www-data in the image
-docker run -d -p 8080:8080 -v "$PWD/grav:/var/www/html" ghcr.io/jogai/serversideup-php-grav:8.5
+docker run -d -p 8080:8080 -v "$PWD/grav:/var/www/html" ghcr.io/jogai/serversideup-php-grav:latest
 ```
 
 See [`compose.example.yaml`](compose.example.yaml) for a site behind Traefik with Grav's
@@ -45,9 +45,10 @@ Tags:
 
 | Tag | Example | Moves |
 |---|---|---|
-| `latest`, `8.5` | | with every release |
-| `<php>` | `8.5.12` | until the next PHP patch release |
-| `<php>-ssu<serversideup>[-r<n>]` | `8.5.12-ssu5.0.2`, `8.5.12-ssu5.0.2-r1` | never (`-r<n>` is a rebuild of the same versions) |
+| `latest` | | with every release |
+| `<php minor>` | `8.6` | until the next PHP minor |
+| `<php>` | `8.6.1` | until the next PHP patch release |
+| `<php>-ssu<serversideup>[-r<n>]` | `8.6.1-ssu5.2.0`, `8.6.1-ssu5.2.0-r1` | never (`-r<n>` is a rebuild of the same versions) |
 
 ### Settings
 
@@ -79,7 +80,7 @@ Grav's nightly jobs (cache purge, backups) can run from the host's crontab:
 
 ## How updates flow
 
-1. Renovate watches `ghcr.io/serversideup/php:8.5-frankenphp-alpine-v<version>` in the
+1. Renovate watches `ghcr.io/serversideup/php:8-frankenphp-alpine-v<version>` in the
    [`Dockerfile`](Dockerfile). It opens a PR for a new serversideup release (new tag) and for a
    rebuild of the current one (new digest, e.g. a PHP patch release or Alpine fixes).
 2. The [CI](.github/workflows/ci.yml) workflow builds the image. There are no tests beyond that:
@@ -92,8 +93,9 @@ Grav's nightly jobs (cache purge, backups) can run from the host's crontab:
 Renovate has no schedule and opens one PR at a time. It also keeps the GitHub Actions up to date
 (pinned to commit digests). Those PRs are built and automerged too, but don't make a release.
 A new serversideup **major** version is not automerged: check its release notes, then merge it
-by hand. PHP 8.6 is a different tag line; switch to it by editing the `FROM` line and the
-version pattern in [`renovate.json`](renovate.json).
+by hand. The `8-` tag always has the newest PHP 8.x, so a new PHP minor (8.6, 8.7) arrives with
+an ordinary update and is automerged like any other; only the build is checked. PHP 9 needs a
+new tag line: edit the `FROM` line and the version pattern in [`renovate.json`](renovate.json).
 
 ## GitHub setup
 
